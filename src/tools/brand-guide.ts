@@ -10,12 +10,30 @@ const BRAND_GUIDE_SCHEMA = `{
   "appName": string,
   "tagline": string,
   "targetUser": string,
-  "coreEmotions": string[],                  // 3–5 emotional keywords
+
+  // ── Core Emotional Keywords ───────────────────────────────────────────────
+  // What the user must FEEL when using the app (3–5 specific adjectives).
+  // These drive every visual and copy decision downstream.
+  "coreEmotions": string[],
+
+  // ── Visual Metaphors ─────────────────────────────────────────────────────
+  // Real-world physical objects whose material qualities, proportions, and
+  // interactions directly inspire the UI's surfaces, shapes, and motion.
   "visualMetaphors": {
-    "primary": string,                       // main real-world object metaphor
-    "secondary": string[],                   // 3–5 supporting objects
-    "searchKeywordsEn": string[]             // English keywords for Unsplash/Pexels
+    "primary": string,        // one dominant real-world object (e.g. "Japanese washi paper notebook")
+    "secondary": string[],   // 3–5 supporting objects that share the same textural or spatial feel
+    "designImplications": string[], // how each metaphor translates: surface texture → color/elevation style,
+                                    // object proportions → border-radius, object weight → motion easing, etc.
+    "searchKeywordsEn": string[]    // English mood board search keywords
   },
+
+  // ── Anti-Goals ───────────────────────────────────────────────────────────
+  // The look, feel, and emotional register this app must NEVER have.
+  // These are brand-level prohibitions, not implementation patterns.
+  // Example: "corporate dashboard coldness", "gamified notification spam",
+  //          "glossy hyper-saturated social media energy"
+  "antiGoals": string[],
+
   "colorDirection": {
     "mood": string,
     "backgroundSuggestion": string,
@@ -26,7 +44,11 @@ const BRAND_GUIDE_SCHEMA = `{
     "voiceDescription": string,
     "avoid": string[]
   },
+
+  // ── Anti-Patterns ────────────────────────────────────────────────────────
+  // Specific UI/UX implementation patterns that contradict the brand.
   "antiPatterns": string[],
+
   "uiPrinciples": string[],
   "copyTone": {
     "style": string,
@@ -46,15 +68,72 @@ export function registerBrandGuideTools(server: McpServer): void {
         .string()
         .describe("What the app does (2–4 sentences)"),
       targetUser: z.string().describe("Who the target user is"),
-      coreEmotion: z.string().describe("Primary emotion users should feel"),
+      coreEmotion: z
+        .string()
+        .describe(
+          "Primary emotion(s) users should feel — one phrase or several comma-separated keywords",
+        ),
+      visualMetaphorsHint: z
+        .string()
+        .optional()
+        .describe(
+          "Optional: real-world objects, materials, or spaces that could inspire the UI (e.g. 'aged leather notebook, warm candlelight'). Leave empty to let the AI derive them.",
+        ),
+      antiGoalsHint: z
+        .string()
+        .optional()
+        .describe(
+          "Optional: the look/feel this app must NEVER have (e.g. 'cold corporate SaaS dashboard, hyper-saturated social media feed'). Leave empty to let the AI derive them.",
+        ),
     },
-    async ({ appName, productDescription, targetUser, coreEmotion }) => {
-      const prompt = `You are a senior product brand strategist. Generate a brand guide as strict JSON for the following product.
+    async ({ appName, productDescription, targetUser, coreEmotion, visualMetaphorsHint, antiGoalsHint }) => {
+      const metaphorSection = visualMetaphorsHint?.trim()
+        ? `Known Visual Metaphor Hints (use as anchors, expand on them): ${visualMetaphorsHint}`
+        : `Visual Metaphor Hints: none provided — derive from the product description and target user.`;
+
+      const antiGoalSection = antiGoalsHint?.trim()
+        ? `Known Anti-Goal Hints (must be reflected in antiGoals field): ${antiGoalsHint}`
+        : `Anti-Goal Hints: none provided — derive from the product description and what would feel wrong for this audience.`;
+
+      const prompt = `You are a senior product brand strategist and design systems thinker.
+Generate a brand guide as strict JSON for the following product.
 
 App Name: ${appName}
 Description: ${productDescription}
 Target User: ${targetUser}
 Core Emotion to Evoke: ${coreEmotion}
+${metaphorSection}
+${antiGoalSection}
+
+## Reasoning Instructions
+
+Work through these three areas explicitly in your thinking before producing JSON:
+
+**1. Core Emotional Keywords**
+Identify 3–5 precise emotional adjectives that describe the user's ideal experience.
+Be specific: not "good" but "quietly confident"; not "fast" but "effortlessly frictionless".
+These keywords must be strong enough to act as a filter: if a design decision contradicts any keyword, that decision is wrong.
+
+**2. Visual Metaphors**
+Choose real-world physical objects, materials, or spaces whose sensory qualities directly inspire the UI.
+For each metaphor, articulate the design implication:
+- Surface quality (e.g. matte paper → low-gloss flat surfaces, no harsh drop shadows)
+- Proportions (e.g. slim pocket notebook → compact cards, tight spacing)
+- Weight and movement (e.g. smooth river stone → slow, organic motion curves)
+- Light interaction (e.g. frosted glass → translucent overlays, diffused light)
+The metaphors must be consistent with coreEmotions and coherent with each other — they should feel like they belong to the same physical world.
+
+**3. Anti-Goals**
+Define what the app must NEVER feel like — the brand's negative space.
+Anti-goals are not about specific widgets; they are about atmosphere and emotional register.
+Examples of well-written anti-goals:
+- "Cold, data-centric dashboard that prioritises density over breath"
+- "Gamified reward loop that manufactures urgency"
+- "Glossy consumer app with hyper-saturated hero images"
+Anti-goals must be specific enough to rule out real design directions.
+Then derive antiPatterns as specific UI/UX implementations that would produce those anti-goal atmospheres.
+
+Only after reasoning through all three, output the JSON.
 
 Return ONLY valid JSON matching this schema — no markdown fences, no extra text:
 ${BRAND_GUIDE_SCHEMA}`;
