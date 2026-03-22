@@ -11,8 +11,7 @@ A generic MCP server implementing the **App Soul Injection** workflow — go fro
 | `get_brand_guide_prompt`   | 2    | Returns a prompt — calling AI generates the brand guide JSON itself                                                  |
 | `save_brand_guide`         | 2    | Save AI-generated brand guide to disk                                                                                |
 | `load_brand_guide`         | 2    | Load a previously saved brand guide                                                                                  |
-| `search_mood_board`        | 3    | Search Unsplash by keywords                                                                                          |
-| `download_mood_board`      | 3    | Download mood board images to local dir                                                                              |
+| `download_mood_board`      | 3    | Download images to local dir from URLs extracted by Playwright MCP                                                   |
 | `read_image`               | 4    | Return one image to the calling multimodal AI (Copilot) for palette, style, and metaphor analysis                    |
 | `read_mood_board_dir`      | 4    | Return all images in a dir to the calling multimodal AI for unified style synthesis                                  |
 | `extract_palette`          | 4    | Pixel-level hex extraction (no AI required, works offline)                                                           |
@@ -40,36 +39,26 @@ npm run build
 
 ## Required Environment
 
-This server makes **zero external AI API calls**. All text generation and image analysis are handled by the calling AI (Copilot). `read_image` and `read_mood_board_dir` return raw image data to Copilot, which analyzes them directly using its own vision model.
+This server makes **zero external API calls** — no third-party API keys required.
 
-| Variable                | Required | Purpose                                  |
-| ----------------------- | -------- | ---------------------------------------- |
-| `DRIBBBLE_ACCESS_TOKEN` | Required | App UI design reference search (Dribbble) |
-| `OUTPUT_DIR`            | Optional | Download dir (default: `./output`)       |
+| Variable     | Required | Purpose                            |
+| ------------ | -------- | ---------------------------------- |
+| `OUTPUT_DIR` | Optional | Download dir (default: `./output`) |
 
 `extract_palette` / `extract_palette_from_dir` are available as a pixel-level fallback when vision analysis is not needed.
 
 ## VS Code MCP Config
 
-Add to `.vscode/mcp.json`. VS Code will prompt you for the Unsplash key on first use and cache it per workspace — no `.env` file needed.
+Add to `.vscode/mcp.json`. No API keys required.
 
 ```json
 {
-  "inputs": [
-    {
-      "id": "dribbbleToken",
-      "type": "promptString",
-      "description": "Dribbble Access Token (https://dribbble.com/account/applications/new)",
-      "password": false
-    }
-  ],
   "servers": {
     "app-soul": {
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "github:weberwang/app-soul-mcp"],
       "env": {
-        "DRIBBBLE_ACCESS_TOKEN": "${input:dribbbleToken}",
         "OUTPUT_DIR": "${workspaceFolder}/output"
       }
     }
@@ -83,6 +72,21 @@ If you cloned the repo locally, use `node` instead:
 "command": "node",
 "args": ["/path/to/app-soul-mcp/build/index.js"]
 ```
+
+## Mood Board — Playwright MCP Integration
+
+For gathering App UI design references, use **Playwright MCP** (built into VS Code) alongside this server. Copilot orchestrates both:
+
+```
+[Playwright MCP]  browser_navigate(dribbble.com/search?q=...)  
+                  browser_snapshot() → extract image URLs  
+                        ↓  
+[app-soul-mcp]    download_mood_board(urls)  → save to OUTPUT_DIR/mood_board/  
+                  read_mood_board_dir()      → Copilot vision analysis  
+```
+
+Recommended sources: **Dribbble**, **Mobbin**, **Figma Community** — any site Playwright can browse.
+No API keys needed for any of them.
 
 ## Workflow Order
 

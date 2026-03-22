@@ -3,77 +3,15 @@ import fetch from "node-fetch";
 import path from "path";
 import { z } from "zod";
 import { env } from "../lib/env.js";
-async function searchDribbble(keyword, count) {
-    if (!env.dribbbleAccessToken)
-        return [];
-    const resp = await fetch(`https://api.dribbble.com/v2/shots?q=${encodeURIComponent(keyword)}&per_page=${count}`, { headers: { Authorization: `Bearer ${env.dribbbleAccessToken}` } });
-    if (!resp.ok)
-        return [];
-    const shots = (await resp.json());
-    return shots.map((s) => ({
-        id: String(s.id),
-        url: s.images.hidpi ?? s.images.normal,
-        thumbnailUrl: s.images.teaser,
-        description: s.title + (s.description ? ` — ${s.description.replace(/<[^>]*>/g, "").slice(0, 120)}` : ""),
-        sourceKeyword: keyword,
-        pageUrl: s.html_url,
-        source: "dribbble",
-    }));
-}
 export function registerMoodBoardTools(server) {
-    server.tool("search_mood_board", "Search Dribbble for app UI design references using keywords (e.g. from brand guide's searchKeywordsEn). Returns shot URLs and metadata to review before downloading.", {
-        keywords: z
-            .array(z.string())
-            .describe("Search keywords — use English terms from brand guide visualMetaphors.searchKeywordsEn"),
-        perKeyword: z
-            .number()
-            .min(1)
-            .max(10)
-            .default(4)
-            .describe("Number of shots to fetch per keyword"),
-    }, async ({ keywords, perKeyword }) => {
-        const results = [];
-        for (const keyword of keywords) {
-            results.push(...(await searchDribbble(keyword, perKeyword)));
-        }
-        if (results.length === 0) {
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: "No results. Check that DRIBBBLE_ACCESS_TOKEN is set. Get one at https://dribbble.com/account/applications/new",
-                    },
-                ],
-            };
-        }
-        return {
-            content: [
-                {
-                    type: "text",
-                    text: JSON.stringify({
-                        total: results.length,
-                        images: results.map((img) => ({
-                            id: img.id,
-                            source: img.source,
-                            keyword: img.sourceKeyword,
-                            description: img.description,
-                            downloadUrl: img.url,
-                            previewUrl: img.thumbnailUrl,
-                            pageUrl: img.pageUrl,
-                        })),
-                    }, null, 2),
-                },
-            ],
-        };
-    });
-    server.tool("download_mood_board", "Download mood board reference images to a local directory. Pass the downloadUrl values from search_mood_board results.", {
+    server.tool("download_mood_board", "Download mood board reference images to a local directory from a list of URLs. URLs are typically extracted by an external browser/crawler MCP (e.g. Playwright MCP) browsing Dribbble, Mobbin, Figma Community, etc.", {
         images: z
             .array(z.object({
-            id: z.string(),
-            downloadUrl: z.string().url(),
-            description: z.string().optional(),
+            id: z.string().describe("Unique identifier for the image (used as filename)"),
+            downloadUrl: z.string().url().describe("Direct image URL to download"),
+            description: z.string().optional().describe("Optional label for this image"),
         }))
-            .describe("Images to download (from search_mood_board output)"),
+            .describe("Images to download — pass URLs extracted from any design reference site"),
         outputDir: z
             .string()
             .optional()
@@ -84,7 +22,9 @@ export function registerMoodBoardTools(server) {
         const downloaded = [];
         const failed = [];
         for (const img of images) {
-            const filePath = path.join(targetDir, `${img.id}.jpg`);
+            const ext = img.downloadUrl.split("?")[0].split(".").pop()?.toLowerCase();
+            const safeExt = ["jpg", "jpeg", "png", "webp", "gif"].includes(ext ?? "") ? ext : "jpg";
+            const filePath = path.join(targetDir, `${img.id}.${safeExt}`);
             try {
                 const resp = await fetch(img.downloadUrl);
                 if (!resp.ok)
