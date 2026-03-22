@@ -258,29 +258,71 @@ Brand Guide:
 ${brandGuide}
 
 ${moodSection}
+## Phase 1 — Establish the Color System Foundation
+
+Before filling any token, design the complete color system as a whole. A color system is not a list of hex values — it is a set of intentional relationships that must hold across every screen, every state, and both themes simultaneously.
+
+Work through these layers in order:
+
+**1. Source palette (3–5 hues)**
+Derive from brand guide colorDirection + mood board. Identify:
+- Brand hue (becomes accent / primary)
+- Neutral family (drives all surfaces and ink)
+- Supporting hue(s) for secondary actions and status
+
+**2. Tonal scales**
+For each hue, build a tonal scale (10 steps, ~5%–95% lightness). These become your token pool.
+
+**3. Theme pairing**
+Assign tones to roles such that the SAME role token looks correct in BOTH themes:
+- Light theme: surfaces are high-lightness tones; ink is low-lightness
+- Dark theme: surfaces are low-lightness tones; ink is high-lightness
+- Accent stays recognisably the same brand hue in both themes — adjust lightness, not hue
+- Do NOT invert the palette mechanically — dark mode is a re-assignment of tones, not a flip
+
+**4. Contrast verification (mental check before assigning)**
+Every ink-on-surface pair must pass WCAG AA (≥4.5:1 for text, ≥3:1 for large text/UI elements):
+- inkPrimary on surfacePrimary
+- inkSecondary on surfacePrimary and surfaceSecondary
+- inkOnAccent on accentPrimary
+- navBarActiveIcon on navBarBackground
+- appBarInk on appBarBackground
+- inputInk on inputFill
+- every statusXxxInk on its statusXxxSubtle background
+- frameworkOnPrimary on frameworkPrimary
+
+**5. Harmony check — imagine a typical screen**
+Picture the main list screen: app bar, list of cards, bottom nav, one accent button.
+All these surfaces and text colors appear together. Ask: do they form a coherent, brand-true visual field? No single element should feel like it belongs to a different app.
+
+**6. State coherence**
+Interactive states (hover, pressed, focused, disabled) must feel like the same element shifting — never a different color entirely. Disabled is always inkDisabled regardless of the surface.
+
+Only after completing Phase 1 in your reasoning, proceed to output the JSON.
+
+## Phase 2 — Output the Design Specification
+
 Generate a comprehensive UI/UX design specification as strict JSON.
 
-Rules:
+Color token rules:
 - All hex values must be specific (e.g. "#FAF8F5", never "warm white" or vague descriptions)
-- Color tokens must derive from the brand guide's colorDirection + mood board palette
-- Dark mode must adapt thoughtfully — not simply invert or blindly darken light values
-- Every "ink" token must be verified to pass WCAG AA contrast (≥4.5:1) against its paired surface: inkPrimary on surfacePrimary, inkOnAccent on accentPrimary, navBarActiveIcon on navBarBackground, appBarInk on appBarBackground, inputInk on inputFill, etc.
-- inkTertiary is for placeholders and decorative labels only — never use it for meaningful content
-- inkOnImage must remain legible over a range of photo lightness values — prefer near-white with subtle shadow or a semi-transparent overlay rather than a pure color
-- Status subtle backgrounds (statusSuccessSubtle, statusWarningSubtle, etc.) must be desaturated enough not to compete with the main surface; their paired "Ink" tokens must pass WCAG AA against the subtle background
-- Navigation colors (navBar*, appBar*) must feel intentional and brand-aligned, not default grey; the indicator must clearly mark the active item without being jarring
-- Input field tokens form a complete system: fill → border → focused → error states must all be visually distinct yet harmonious
-- Framework system colors (frameworkPrimary, frameworkSurface, etc.) must be explicitly defined and harmonized with the semantic tokens above — wire them directly into the platform theme API (Flutter ThemeData/ColorScheme, Tailwind CSS variables, React Native StyleSheet). Unthemed defaults break native component consistency
-- frameworkPrimary must match accentPrimary; frameworkOnPrimary must pass WCAG AA on it
-- frameworkSecondary is for secondary interactive elements (outlined buttons, toggles, secondary FAB)
-- frameworkSurfaceVariant governs chip/tag backgrounds and quiet container fills — harmonize with surfaceSecondary
-- frameworkScrim is the modal backdrop — typically semi-transparent black; adjust opacity for dark mode
+- Dark mode surfaces: use dark neutrals with subtle warmth or tint matching the brand hue — avoid flat #121212 unless the brand explicitly calls for it
+- inkTertiary is for placeholder / decorative labels only — never for meaningful content
+- inkOnImage: prefer near-white (#FFFFFF or near) — it must survive both light and dark photo backgrounds
+- Status subtle backgrounds must be low-saturation tints; their Ink tokens must pass WCAG AA on them
+- navBar* and appBar* must be intentional brand colors, not default grey
+- Input tokens form a complete state machine: default → focused → error — all three visually distinct yet from the same tonal family
+- Framework system colors map 1:1 to platform theme API fields — every field must be filled; no field may be left as a framework default
+- frameworkPrimary = accentPrimary; frameworkSurface = surfacePrimary
+- frameworkScrim: semi-transparent overlay, e.g. "rgba(0,0,0,0.5)" — adjust for dark mode
+
+Other rules:
 - Typography scale must reflect the brand voice; prefer readable body sizing over flashy display
 - All spacing values must be multiples of the baseUnit (4 or 8)
 - Motion durations and easing must match the brand's emotional register
 - Component dimensions must be concrete pixel values — no "standard" or "default"
-- antiPatterns must include everything from the brand guide plus any visual patterns that conflict with the brand identity
-- platformNotes must address ${platform}-specific implementation details (widget names, theme APIs, ColorScheme constructor fields, etc.) and explain how to wire the framework color tokens into the platform theme
+- antiPatterns must include everything from the brand guide plus visual patterns that conflict with the brand identity
+- platformNotes must address ${platform}-specific theme API details (widget names, ColorScheme fields, etc.) and explain how to wire every framework token into the theme
 - patterns.successFeedback must NOT use SnackBar, Toast, or alert dialogs — describe a subtle in-context approach
 
 Return ONLY valid JSON matching this exact schema — no markdown fences, no extra text:
