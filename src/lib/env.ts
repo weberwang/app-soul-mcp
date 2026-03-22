@@ -6,6 +6,6 @@ function optionalEnv(key: string, fallback = ""): string {
 }
 
 export const env = {
-  unsplashAccessKey: optionalEnv("UNSPLASH_ACCESS_KEY"),
+  dribbbleAccessToken: optionalEnv("DRIBBBLE_ACCESS_TOKEN"),
   outputDir: optionalEnv("OUTPUT_DIR", path.join(process.cwd(), "output")),
 };

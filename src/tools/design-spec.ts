@@ -14,12 +14,21 @@ const DESIGN_SPEC_SCHEMA = `{
       "inkPrimary":       string,  // primary text
       "inkSecondary":     string,  // secondary / muted text
       "inkDisabled":      string,  // disabled text and icons
-      "accentPrimary":    string,  // main CTA, interactive highlight
+      "accentPrimary":    string,  // main CTA, interactive highlight — maps to frameworkPrimary
       "accentSubtle":     string,  // soft ~15% version of accent
       "borderSubtle":     string,  // dividers and borders
       "statusSuccess":    string,
       "statusWarning":    string,
-      "statusError":      string
+      "statusError":      string,
+      "frameworkPrimary":            string,  // platform theme primary (Flutter ColorScheme.primary / CSS --color-primary)
+      "frameworkOnPrimary":          string,  // text/icons on frameworkPrimary (must pass WCAG AA contrast)
+      "frameworkPrimaryContainer":   string,  // tonal container surface (Flutter) / secondary brand surface
+      "frameworkOnPrimaryContainer": string,  // content on top of frameworkPrimaryContainer
+      "frameworkSurface":            string,  // default scaffold/page background fed to theme
+      "frameworkOnSurface":          string,  // default body text color fed to theme
+      "frameworkSurfaceVariant":     string,  // input fills, chip/tag backgrounds, quiet containers
+      "frameworkOnSurfaceVariant":   string,  // text inside surface variant components
+      "frameworkOutline":            string   // default border / divider color fed to theme
     },
     "dark": {
       "surfacePrimary":   string,
@@ -33,7 +42,16 @@ const DESIGN_SPEC_SCHEMA = `{
       "borderSubtle":     string,
       "statusSuccess":    string,
       "statusWarning":    string,
-      "statusError":      string
+      "statusError":      string,
+      "frameworkPrimary":            string,
+      "frameworkOnPrimary":          string,
+      "frameworkPrimaryContainer":   string,
+      "frameworkOnPrimaryContainer": string,
+      "frameworkSurface":            string,
+      "frameworkOnSurface":          string,
+      "frameworkSurfaceVariant":     string,
+      "frameworkOnSurfaceVariant":   string,
+      "frameworkOutline":            string
     }
   },
   "typography": {
@@ -167,12 +185,15 @@ Rules:
 - All hex values must be specific (e.g. "#FAF8F5", never "warm white" or vague descriptions)
 - Color tokens must derive from the brand guide's colorDirection + mood board palette
 - Dark mode must adapt thoughtfully — not simply invert or blindly darken light values
+- Framework system colors (frameworkPrimary, frameworkSurface, etc.) must be explicitly defined and harmonized with the semantic tokens — they are the values you will pass directly to the platform's theme API (e.g. Flutter ThemeData/ColorScheme, Tailwind CSS variables, React Native StyleSheet). Do not leave them as defaults; unthemed framework defaults will break the visual consistency of native components (buttons, text fields, bottom sheets, chips, dialogs, etc.)
+- The frameworkPrimary color determines the appearance of default interactive components (filled buttons, FABs, selection states, progress indicators) — choose it carefully to match accentPrimary while ensuring sufficient contrast on frameworkOnPrimary
+- frameworkSurfaceVariant governs input field fills, chip backgrounds, and similar quiet container surfaces — it must feel at home alongside surfaceSecondary
 - Typography scale must reflect the brand voice; prefer readable body sizing over flashy display
 - All spacing values must be multiples of the baseUnit (4 or 8)
 - Motion durations and easing must match the brand's emotional register
 - Component dimensions must be concrete pixel values — no "standard" or "default"
 - antiPatterns must include everything from the brand guide plus any visual patterns that conflict with the brand identity
-- platformNotes must address ${platform}-specific implementation details (widget names, theme APIs, etc.)
+- platformNotes must address ${platform}-specific implementation details (widget names, theme APIs, ColorScheme constructor fields, etc.) and explain how to wire the framework color tokens into the platform theme
 - patterns.successFeedback must NOT use SnackBar, Toast, or alert dialogs — describe a subtle in-context approach
 
 Return ONLY valid JSON matching this exact schema — no markdown fences, no extra text:

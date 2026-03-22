@@ -1,6 +1,6 @@
 import "dotenv/config";
 export declare const env: {
-    unsplashAccessKey: string;
+    dribbbleAccessToken: string;
     outputDir: string;
 };
 //# sourceMappingURL=env.d.ts.map

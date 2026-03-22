@@ -42,10 +42,10 @@ npm run build
 
 This server makes **zero external AI API calls**. All text generation and image analysis are handled by the calling AI (Copilot). `read_image` and `read_mood_board_dir` return raw image data to Copilot, which analyzes them directly using its own vision model.
 
-| Variable              | Required | Purpose                            |
-| --------------------- | -------- | ---------------------------------- |
-| `UNSPLASH_ACCESS_KEY` | Required | Mood board image search            |
-| `OUTPUT_DIR`          | Optional | Download dir (default: `./output`) |
+| Variable                | Required | Purpose                                  |
+| ----------------------- | -------- | ---------------------------------------- |
+| `DRIBBBLE_ACCESS_TOKEN` | Required | App UI design reference search (Dribbble) |
+| `OUTPUT_DIR`            | Optional | Download dir (default: `./output`)       |
 
 `extract_palette` / `extract_palette_from_dir` are available as a pixel-level fallback when vision analysis is not needed.
 
@@ -57,9 +57,9 @@ Add to `.vscode/mcp.json`. VS Code will prompt you for the Unsplash key on first
 {
   "inputs": [
     {
-      "id": "unsplashKey",
+      "id": "dribbbleToken",
       "type": "promptString",
-      "description": "Unsplash Access Key (https://unsplash.com/developers)",
+      "description": "Dribbble Access Token (https://dribbble.com/account/applications/new)",
       "password": false
     }
   ],
@@ -69,7 +69,7 @@ Add to `.vscode/mcp.json`. VS Code will prompt you for the Unsplash key on first
       "command": "npx",
       "args": ["-y", "github:weberwang/app-soul-mcp"],
       "env": {
-        "UNSPLASH_ACCESS_KEY": "${input:unsplashKey}",
+        "DRIBBBLE_ACCESS_TOKEN": "${input:dribbbleToken}",
         "OUTPUT_DIR": "${workspaceFolder}/output"
       }
     }

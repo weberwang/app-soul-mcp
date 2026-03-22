@@ -4,7 +4,7 @@ function optionalEnv(key, fallback = "") {
     return process.env[key] ?? fallback;
 }
 export const env = {
-    unsplashAccessKey: optionalEnv("UNSPLASH_ACCESS_KEY"),
+    dribbbleAccessToken: optionalEnv("DRIBBBLE_ACCESS_TOKEN"),
     outputDir: optionalEnv("OUTPUT_DIR", path.join(process.cwd(), "output")),
 };
 //# sourceMappingURL=env.js.map
