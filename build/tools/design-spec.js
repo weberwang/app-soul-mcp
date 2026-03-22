@@ -6,50 +6,143 @@ import { env } from "../lib/env.js";
 const DESIGN_SPEC_SCHEMA = `{
   "colorTokens": {
     "light": {
-      "surfacePrimary":   string,  // main app background
-      "surfaceSecondary": string,  // cards, elevated surfaces
-      "surfaceTint":      string,  // subtle overlays, modal scrims
-      "inkPrimary":       string,  // primary text
-      "inkSecondary":     string,  // secondary / muted text
-      "inkDisabled":      string,  // disabled text and icons
-      "accentPrimary":    string,  // main CTA, interactive highlight — maps to frameworkPrimary
-      "accentSubtle":     string,  // soft ~15% version of accent
-      "borderSubtle":     string,  // dividers and borders
-      "statusSuccess":    string,
-      "statusWarning":    string,
-      "statusError":      string,
-      "frameworkPrimary":            string,  // platform theme primary (Flutter ColorScheme.primary / CSS --color-primary)
-      "frameworkOnPrimary":          string,  // text/icons on frameworkPrimary (must pass WCAG AA contrast)
-      "frameworkPrimaryContainer":   string,  // tonal container surface (Flutter) / secondary brand surface
-      "frameworkOnPrimaryContainer": string,  // content on top of frameworkPrimaryContainer
-      "frameworkSurface":            string,  // default scaffold/page background fed to theme
-      "frameworkOnSurface":          string,  // default body text color fed to theme
-      "frameworkSurfaceVariant":     string,  // input fills, chip/tag backgrounds, quiet containers
-      "frameworkOnSurfaceVariant":   string,  // text inside surface variant components
-      "frameworkOutline":            string   // default border / divider color fed to theme
+      // ── Surfaces ──────────────────────────────────────────────────────────
+      "surfacePrimary":        string,  // main app background (scaffold)
+      "surfaceSecondary":      string,  // cards, list items, elevated panels
+      "surfaceTertiary":       string,  // nested cards, inner panels
+      "surfaceTint":           string,  // modal scrims, overlay tints
+      "surfaceInverse":        string,  // tooltip / snackbar background (dark on light)
+
+      // ── Text / Ink ────────────────────────────────────────────────────────
+      "inkPrimary":            string,  // headlines, body copy on surfacePrimary
+      "inkSecondary":          string,  // captions, metadata, helper text
+      "inkTertiary":           string,  // placeholder text, very muted labels
+      "inkDisabled":           string,  // disabled text and icons
+      "inkOnAccent":           string,  // text/icons placed directly on accentPrimary
+      "inkOnSurfaceInverse":   string,  // text on surfaceInverse (tooltip / snackbar)
+      "inkLink":               string,  // hyperlinks, tappable inline text
+      "inkOnImage":            string,  // text overlaid on photos/cards with image bg
+
+      // ── Accent / Interactive ──────────────────────────────────────────────
+      "accentPrimary":         string,  // main CTA, active tabs, selected state
+      "accentSecondary":       string,  // secondary actions, toggle on-state
+      "accentSubtle":          string,  // soft ~15% tint of accentPrimary (highlight bg)
+
+      // ── Borders & Separators ──────────────────────────────────────────────
+      "borderSubtle":          string,  // list dividers, card outlines
+      "borderStrong":          string,  // focused input rings, emphasized separators
+      "borderInteractive":     string,  // unfocused input border
+
+      // ── Status ────────────────────────────────────────────────────────────
+      "statusSuccess":         string,
+      "statusSuccessSubtle":   string,  // success badge / tag background
+      "statusSuccessInk":      string,  // text on statusSuccessSubtle
+      "statusWarning":         string,
+      "statusWarningSubtle":   string,
+      "statusWarningInk":      string,
+      "statusError":           string,
+      "statusErrorSubtle":     string,
+      "statusErrorInk":        string,
+      "statusInfo":            string,
+      "statusInfoSubtle":      string,
+      "statusInfoInk":         string,
+
+      // ── Navigation ────────────────────────────────────────────────────────
+      "navBarBackground":      string,  // bottom nav / tab bar background
+      "navBarActiveIcon":      string,  // selected tab icon + label
+      "navBarInactiveIcon":    string,  // unselected tab icons
+      "navBarIndicator":       string,  // active tab pill / underline
+      "appBarBackground":      string,  // top app bar / header background
+      "appBarInk":             string,  // title and icons in app bar
+
+      // ── Input & Form ──────────────────────────────────────────────────────
+      "inputFill":             string,  // text field background
+      "inputFillFocused":      string,  // focused state fill
+      "inputInk":              string,  // typed text color
+      "inputPlaceholder":      string,  // placeholder text
+      "inputBorder":           string,  // default border
+      "inputBorderFocused":    string,  // focused border (usually accentPrimary)
+      "inputBorderError":      string,  // error state border
+      "inputLabelActive":      string,  // floating label when focused
+
+      // ── Framework System Colors ───────────────────────────────────────────
+      "frameworkPrimary":            string,  // Flutter ColorScheme.primary / CSS --color-primary
+      "frameworkOnPrimary":          string,  // text/icons on frameworkPrimary
+      "frameworkPrimaryContainer":   string,  // tonal container / secondary brand surface
+      "frameworkOnPrimaryContainer": string,
+      "frameworkSecondary":          string,  // secondary brand hue (FAB alt, toggles)
+      "frameworkOnSecondary":        string,
+      "frameworkSurface":            string,  // default scaffold / page background
+      "frameworkOnSurface":          string,  // default body text
+      "frameworkSurfaceVariant":     string,  // input fills, chips, quiet containers
+      "frameworkOnSurfaceVariant":   string,
+      "frameworkOutline":            string,  // default border / divider
+      "frameworkOutlineVariant":     string,  // subtle dividers inside cards
+      "frameworkError":              string,
+      "frameworkOnError":            string,
+      "frameworkScrim":              string   // modal backdrop
     },
     "dark": {
-      "surfacePrimary":   string,
-      "surfaceSecondary": string,
-      "surfaceTint":      string,
-      "inkPrimary":       string,
-      "inkSecondary":     string,
-      "inkDisabled":      string,
-      "accentPrimary":    string,
-      "accentSubtle":     string,
-      "borderSubtle":     string,
-      "statusSuccess":    string,
-      "statusWarning":    string,
-      "statusError":      string,
+      "surfacePrimary":        string,
+      "surfaceSecondary":      string,
+      "surfaceTertiary":       string,
+      "surfaceTint":           string,
+      "surfaceInverse":        string,
+      "inkPrimary":            string,
+      "inkSecondary":          string,
+      "inkTertiary":           string,
+      "inkDisabled":           string,
+      "inkOnAccent":           string,
+      "inkOnSurfaceInverse":   string,
+      "inkLink":               string,
+      "inkOnImage":            string,
+      "accentPrimary":         string,
+      "accentSecondary":       string,
+      "accentSubtle":          string,
+      "borderSubtle":          string,
+      "borderStrong":          string,
+      "borderInteractive":     string,
+      "statusSuccess":         string,
+      "statusSuccessSubtle":   string,
+      "statusSuccessInk":      string,
+      "statusWarning":         string,
+      "statusWarningSubtle":   string,
+      "statusWarningInk":      string,
+      "statusError":           string,
+      "statusErrorSubtle":     string,
+      "statusErrorInk":        string,
+      "statusInfo":            string,
+      "statusInfoSubtle":      string,
+      "statusInfoInk":         string,
+      "navBarBackground":      string,
+      "navBarActiveIcon":      string,
+      "navBarInactiveIcon":    string,
+      "navBarIndicator":       string,
+      "appBarBackground":      string,
+      "appBarInk":             string,
+      "inputFill":             string,
+      "inputFillFocused":      string,
+      "inputInk":              string,
+      "inputPlaceholder":      string,
+      "inputBorder":           string,
+      "inputBorderFocused":    string,
+      "inputBorderError":      string,
+      "inputLabelActive":      string,
       "frameworkPrimary":            string,
       "frameworkOnPrimary":          string,
       "frameworkPrimaryContainer":   string,
       "frameworkOnPrimaryContainer": string,
+      "frameworkSecondary":          string,
+      "frameworkOnSecondary":        string,
       "frameworkSurface":            string,
       "frameworkOnSurface":          string,
       "frameworkSurfaceVariant":     string,
       "frameworkOnSurfaceVariant":   string,
-      "frameworkOutline":            string
+      "frameworkOutline":            string,
+      "frameworkOutlineVariant":     string,
+      "frameworkError":              string,
+      "frameworkOnError":            string,
+      "frameworkScrim":              string
     }
   },
   "typography": {
@@ -171,9 +264,17 @@ Rules:
 - All hex values must be specific (e.g. "#FAF8F5", never "warm white" or vague descriptions)
 - Color tokens must derive from the brand guide's colorDirection + mood board palette
 - Dark mode must adapt thoughtfully — not simply invert or blindly darken light values
-- Framework system colors (frameworkPrimary, frameworkSurface, etc.) must be explicitly defined and harmonized with the semantic tokens — they are the values you will pass directly to the platform's theme API (e.g. Flutter ThemeData/ColorScheme, Tailwind CSS variables, React Native StyleSheet). Do not leave them as defaults; unthemed framework defaults will break the visual consistency of native components (buttons, text fields, bottom sheets, chips, dialogs, etc.)
-- The frameworkPrimary color determines the appearance of default interactive components (filled buttons, FABs, selection states, progress indicators) — choose it carefully to match accentPrimary while ensuring sufficient contrast on frameworkOnPrimary
-- frameworkSurfaceVariant governs input field fills, chip backgrounds, and similar quiet container surfaces — it must feel at home alongside surfaceSecondary
+- Every "ink" token must be verified to pass WCAG AA contrast (≥4.5:1) against its paired surface: inkPrimary on surfacePrimary, inkOnAccent on accentPrimary, navBarActiveIcon on navBarBackground, appBarInk on appBarBackground, inputInk on inputFill, etc.
+- inkTertiary is for placeholders and decorative labels only — never use it for meaningful content
+- inkOnImage must remain legible over a range of photo lightness values — prefer near-white with subtle shadow or a semi-transparent overlay rather than a pure color
+- Status subtle backgrounds (statusSuccessSubtle, statusWarningSubtle, etc.) must be desaturated enough not to compete with the main surface; their paired "Ink" tokens must pass WCAG AA against the subtle background
+- Navigation colors (navBar*, appBar*) must feel intentional and brand-aligned, not default grey; the indicator must clearly mark the active item without being jarring
+- Input field tokens form a complete system: fill → border → focused → error states must all be visually distinct yet harmonious
+- Framework system colors (frameworkPrimary, frameworkSurface, etc.) must be explicitly defined and harmonized with the semantic tokens above — wire them directly into the platform theme API (Flutter ThemeData/ColorScheme, Tailwind CSS variables, React Native StyleSheet). Unthemed defaults break native component consistency
+- frameworkPrimary must match accentPrimary; frameworkOnPrimary must pass WCAG AA on it
+- frameworkSecondary is for secondary interactive elements (outlined buttons, toggles, secondary FAB)
+- frameworkSurfaceVariant governs chip/tag backgrounds and quiet container fills — harmonize with surfaceSecondary
+- frameworkScrim is the modal backdrop — typically semi-transparent black; adjust opacity for dark mode
 - Typography scale must reflect the brand voice; prefer readable body sizing over flashy display
 - All spacing values must be multiples of the baseUnit (4 or 8)
 - Motion durations and easing must match the brand's emotional register

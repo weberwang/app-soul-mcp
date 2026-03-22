@@ -1,6 +1,6 @@
 {
   "name": "app-soul-mcp",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Generic MCP server — App Soul Injection workflow: brand guide → mood board → palette → visual assets → Figma → code",
   "type": "module",
   "bin": {
