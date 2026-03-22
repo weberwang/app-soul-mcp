@@ -20,9 +20,6 @@ A generic MCP server implementing the **App Soul Injection** workflow — go fro
 | `get_design_spec_prompt`   | 4    | Returns a prompt — calling AI generates the full design spec (color tokens, typography, spacing, components, motion) |
 | `save_design_spec`         | 4    | Save AI-generated design spec to disk                                                                                |
 | `load_design_spec`         | 4    | Load a previously saved design spec                                                                                  |
-| `get_prototype_prompt`     | 1    | Returns a prompt — calling AI generates the prototype (tech stack is caller-defined)                                 |
-| `get_final_code_prompt`    | 5    | Returns a prompt — calling AI generates production code itself                                                       |
-| `save_code_files`          | 1/5  | Parse `<file>` blocks from AI output and save to disk                                                                |
 
 ## Setup
 
@@ -90,9 +87,6 @@ If you cloned the repo locally, use `node` instead:
 ## Workflow Order
 
 ```
-get_prototype_prompt → [Copilot generates prototype] → save_code_files
-  ↓  Step 1: functional skeleton
-
 get_brand_guide_prompt → [Copilot generates brand guide] → save_brand_guide
   ↓  Step 2: brand soul
 
@@ -104,10 +98,6 @@ read_mood_board_dir → [Copilot analyzes images]     ← vision model required
   ↓  Step 4: visual extraction
 
 get_design_spec_prompt → [Copilot generates spec] → save_design_spec
-  ↓  Step 4: design specification
      Output: color tokens (light+dark), typography scale, spacing system,
              component dimensions, motion guidelines, accessibility rules
-
-get_final_code_prompt → [Copilot generates code] → save_code_files
-     Step 5: production code (guided by design spec)
 ```
