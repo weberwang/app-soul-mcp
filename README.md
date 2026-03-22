@@ -1,5 +1,7 @@
 # app-soul-mcp
 
+> GitHub: https://github.com/weberwang/app-soul-mcp
+
 A generic MCP server implementing the **App Soul Injection** workflow — go from a product idea to a designed, brand-accurate app without AI slop.
 
 ## Tools
@@ -24,12 +26,19 @@ A generic MCP server implementing the **App Soul Injection** workflow — go fro
 
 ## Setup
 
+No local install required — run directly from GitHub via `npx`:
+
 ```bash
-cd tools/app-soul-mcp
+npx github:weberwang/app-soul-mcp
+```
+
+Or clone and build locally:
+
+```bash
+git clone https://github.com/weberwang/app-soul-mcp.git
+cd app-soul-mcp
 npm install
 npm run build
-cp .env.example .env
-# Edit .env with your API keys
 ```
 
 ## Required Environment
@@ -60,8 +69,8 @@ Add to `.vscode/mcp.json`. VS Code will prompt you for the Unsplash key on first
   "servers": {
     "app-soul": {
       "type": "stdio",
-      "command": "node",
-      "args": ["${workspaceFolder}/tools/app-soul-mcp/build/index.js"],
+      "command": "npx",
+      "args": ["-y", "github:weberwang/app-soul-mcp"],
       "env": {
         "UNSPLASH_ACCESS_KEY": "${input:unsplashKey}",
         "OUTPUT_DIR": "${workspaceFolder}/output"
@@ -69,6 +78,13 @@ Add to `.vscode/mcp.json`. VS Code will prompt you for the Unsplash key on first
     }
   }
 }
+```
+
+If you cloned the repo locally, use `node` instead:
+
+```json
+"command": "node",
+"args": ["/path/to/app-soul-mcp/build/index.js"]
 ```
 
 ## Workflow Order
