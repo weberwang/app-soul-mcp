@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import sharp from "sharp";
 import { z } from "zod";
+import { env } from "../lib/env.js";
 function toHex([r, g, b]) {
     return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 }
@@ -86,19 +87,19 @@ async function extractPaletteFromFile(imagePath, colorCount) {
     return assignColorRoles(palette);
 }
 export function registerPaletteTools(server) {
-    server.tool("extract_palette", "Extract a harmonious color palette from a local reference image using median-cut quantization. Each color is assigned a semantic role (background, surface, accent, text).", {
-        imagePath: z
+    server.tool("extract_palette", "Extract a harmonious color palette from a reference image in OUTPUT_DIR/mood_board/ using median-cut quantization. Each color is assigned a semantic role (background, surface, accent, text).", {
+        filename: z
             .string()
-            .describe("Absolute or relative path to the reference image file"),
+            .describe("Filename of the image inside OUTPUT_DIR/mood_board/ (e.g. \"abc123.jpg\")"),
         colorCount: z
             .number()
             .min(3)
             .max(8)
             .default(5)
             .describe("Number of colors to extract (3–8, default 5)"),
-    }, async ({ imagePath, colorCount }) => {
+    }, async ({ filename, colorCount }) => {
         try {
-            const resolvedPath = path.resolve(imagePath);
+            const resolvedPath = path.join(env.outputDir, "mood_board", path.basename(filename));
             await fs.access(resolvedPath);
             const palette = await extractPaletteFromFile(resolvedPath, colorCount);
             return {
@@ -128,18 +129,15 @@ export function registerPaletteTools(server) {
             };
         }
     });
-    server.tool("extract_palette_from_dir", "Extract and merge palettes from all images in a mood board directory. Returns a deduplicated representative palette across all reference images.", {
-        directory: z
-            .string()
-            .describe("Directory containing mood board images (jpg/png)"),
+    server.tool("extract_palette_from_dir", "Extract and merge palettes from all images in OUTPUT_DIR/mood_board/. Returns a deduplicated representative palette across all reference images.", {
         colorCount: z
             .number()
             .min(3)
             .max(8)
             .default(5)
             .describe("Final number of colors to return"),
-    }, async ({ directory, colorCount }) => {
-        const resolvedDir = path.resolve(directory);
+    }, async ({ colorCount }) => {
+        const resolvedDir = path.join(env.outputDir, "mood_board");
         const files = (await fs.readdir(resolvedDir)).filter((f) => /\.(jpe?g|png|webp)$/i.test(f));
         if (files.length === 0) {
             return {

@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import fs from "fs/promises";
 import path from "path";
 import { z } from "zod";
+import { env } from "../lib/env.js";
 
 function getMimeType(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();
@@ -53,9 +54,9 @@ export function registerAssetTools(server: McpServer): void {
 
   server.tool(
     "read_image",
-    "Read a local image file and return it directly to you (the calling multimodal AI) for analysis. Use this after download_mood_board to extract palette, visual style, metaphors, and atmosphere from a reference image. You will receive both the image and structured analysis instructions.",
+    "Read a single image from the mood board directory and return it directly to you (the calling multimodal AI) for analysis. Use this after download_mood_board to extract palette, visual style, metaphors, and atmosphere from a reference image.",
     {
-      imagePath: z.string().describe("Local path to the image file to analyze"),
+      filename: z.string().describe("Filename of the image inside OUTPUT_DIR/mood_board/ (e.g. \"abc123.jpg\")"),
       mode: z
         .enum(["palette", "style", "figma", "full"])
         .default("full")
@@ -63,8 +64,8 @@ export function registerAssetTools(server: McpServer): void {
           "Analysis mode: 'palette' = colors only | 'style' = visual aesthetics | 'figma' = UI screenshot for code gen | 'full' = everything",
         ),
     },
-    async ({ imagePath, mode }) => {
-      const resolvedPath = path.resolve(imagePath);
+    async ({ filename, mode }) => {
+      const resolvedPath = path.join(env.outputDir, "mood_board", path.basename(filename));
       try {
         await fs.access(resolvedPath);
       } catch {
@@ -89,16 +90,15 @@ export function registerAssetTools(server: McpServer): void {
 
   server.tool(
     "read_mood_board_dir",
-    "Read all images from a mood board directory and return them directly to you (the calling multimodal AI) for analysis. Returns all images in a single response so you can synthesize a unified style profile: palette, visual metaphors, atmosphere — ready to feed into save_brand_guide or get_final_code_prompt.",
+    "Read all images from OUTPUT_DIR/mood_board/ and return them directly to you (the calling multimodal AI) for analysis. Returns all images in a single response so you can synthesize a unified style profile: palette, visual metaphors, atmosphere.",
     {
-      directory: z.string().describe("Directory containing mood board images"),
       mode: z
         .enum(["palette", "style", "full"])
         .default("style")
         .describe("Analysis mode for synthesizing across all images"),
     },
-    async ({ directory, mode }) => {
-      const resolvedDir = path.resolve(directory);
+    async ({ mode }) => {
+      const resolvedDir = path.join(env.outputDir, "mood_board");
       let entries: string[];
       try {
         entries = await fs.readdir(resolvedDir);

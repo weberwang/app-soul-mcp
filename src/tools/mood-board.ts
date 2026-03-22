@@ -19,15 +19,9 @@ export function registerMoodBoardTools(server: McpServer): void {
           }),
         )
         .describe("Images to download — pass URLs extracted from any design reference site"),
-      outputDir: z
-        .string()
-        .optional()
-        .describe(
-          "Local directory to save images (defaults to OUTPUT_DIR/mood_board)",
-        ),
     },
-    async ({ images, outputDir }) => {
-      const targetDir = outputDir ?? path.join(env.outputDir, "mood_board");
+    async ({ images }) => {
+      const targetDir = path.join(env.outputDir, "mood_board");
       await fs.mkdir(targetDir, { recursive: true });
 
       const downloaded: { id: string; path: string }[] = [];

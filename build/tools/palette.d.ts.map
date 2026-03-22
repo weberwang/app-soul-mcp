@@ -1,1 +1,1 @@
-{"version":3,"file":"palette.d.ts","sourceRoot":"","sources":["../../src/tools/palette.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,SAAS,EAAE,MAAM,yCAAyC,CAAC;AAmHpE,wBAAgB,oBAAoB,CAAC,MAAM,EAAE,SAAS,GAAG,IAAI,CAsH5D"}
+{"version":3,"file":"palette.d.ts","sourceRoot":"","sources":["../../src/tools/palette.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,SAAS,EAAE,MAAM,yCAAyC,CAAC;AAoHpE,wBAAgB,oBAAoB,CAAC,MAAM,EAAE,SAAS,GAAG,IAAI,CAmH5D"}
