@@ -24,7 +24,10 @@ const BRAND_GUIDE_SCHEMA = `{
     "secondary": string[],   // 3–5 supporting objects that share the same textural or spatial feel
     "designImplications": string[], // how each metaphor translates: surface texture → color/elevation style,
                                     // object proportions → border-radius, object weight → motion easing, etc.
-    "searchKeywordsEn": string[]    // English mood board search keywords
+    "searchKeywordsEn": string[]    // English search keywords for finding UI/UX reference images on Dribbble / Mobbin / Behance.
+                                    // MUST be app/screen/interface oriented — e.g. "finance app dark UI",
+                                    // "minimal onboarding screen", "wellness app card layout".
+                                    // NEVER use generic photography terms (landscapes, people, food, nature).
   },
 
   // ── Anti-Goals ───────────────────────────────────────────────────────────
@@ -122,6 +125,13 @@ For each metaphor, articulate the design implication:
 - Weight and movement (e.g. smooth river stone → slow, organic motion curves)
 - Light interaction (e.g. frosted glass → translucent overlays, diffused light)
 The metaphors must be consistent with coreEmotions and coherent with each other — they should feel like they belong to the same physical world.
+
+For searchKeywordsEn, generate 6–10 English phrases specifically for finding UI/UX design references on sites like Dribbble, Mobbin, Behance, and Figma Community. Every keyword must describe a screen, interface, or design pattern — never a real-world scene, person, landscape, or object photograph. Structure them as:
+- "[adjective] [app-type] [platform/medium]" — e.g. "minimal finance app iOS"
+- "[style] [screen-type] design" — e.g. "frosted glass onboarding screen"
+- "[emotion/mood] [UI element]" — e.g. "calm dashboard card layout"
+Bad keywords (will return wrong content): "washi paper texture", "mountain lake", "cozy coffee shop", "woman using phone".
+Good keywords (will return design references): "soft pastel wellness app", "clean budgeting dashboard dark mode", "organic card UI mobile".
 
 **3. Anti-Goals**
 Define what the app must NEVER feel like — the brand's negative space.
