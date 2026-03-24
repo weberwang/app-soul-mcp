@@ -19,6 +19,13 @@ A generic MCP server implementing the **App Soul Injection** workflow — go fro
 | `get_design_spec_prompt`   | 4    | Returns a prompt — calling AI generates the full design spec (color tokens, typography, spacing, components, motion) |
 | `save_design_spec`         | 4    | Save AI-generated design spec to disk                                                                                |
 | `load_design_spec`         | 4    | Load a previously saved design spec                                                                                  |
+| `get_prototype_prompt`     | 5    | Returns a prompt for generating a functional prototype in the caller-chosen tech stack                               |
+| `get_final_code_prompt`    | 5    | Returns a prompt for generating final implementation code from brand guide + design spec                             |
+| `save_code_files`          | 5    | Saves AI-generated files from `<code_file>` blocks (legacy `<file>` also supported)                                 |
+| `review_ui_screenshot`     | 6    | Returns a rendered UI screenshot to the calling multimodal AI with a structured visual review prompt                |
+| `review_ui_screenshot_dir` | 6    | Returns all screenshots in a directory for multi-screen flow review and consistency checks                           |
+| `save_ui_review`           | 6    | Saves structured review JSON for later refinement                                                                    |
+| `load_ui_review`           | 6    | Loads a previously saved UI review                                                                                   |
 
 ## Setup
 
@@ -46,6 +53,9 @@ This server makes **zero external API calls** — no third-party API keys requir
 | `OUTPUT_DIR` | Optional | Download dir (default: `./output`) |
 
 `extract_palette` / `extract_palette_from_dir` are available as a pixel-level fallback when vision analysis is not needed.
+
+Generated JSON can be wrapped in markdown fences and the save tools will strip them before validation.
+`save_brand_guide` and `save_design_spec` now perform structural validation before writing files to disk.
 
 ## VS Code MCP Config
 
@@ -104,4 +114,21 @@ read_mood_board_dir → [Copilot analyzes images]     ← vision model required
 get_design_spec_prompt → [Copilot generates spec] → save_design_spec
      Output: color tokens (light+dark), typography scale, spacing system,
              component dimensions, motion guidelines, accessibility rules
+
+get_prototype_prompt or get_final_code_prompt → [Copilot generates code] → save_code_files
+  ↓  Step 5: implementation
+
+render app / capture screenshot → review_ui_screenshot → [Copilot returns structured critique JSON]
+  ↓  Step 6: visual review and refinement loop
+
+multiple screenshots / flow captures → review_ui_screenshot_dir → save_ui_review
+  ↓  Step 6b: multi-screen consistency review
 ```
+
+## Output Protocols
+
+- Brand guide and design spec prompts use an `_thought` field so reasoning stays inside valid JSON.
+- Code generation prompts expect files wrapped in `<code_file name="...">...</code_file>` blocks.
+- `save_code_files` remains backward-compatible with legacy `<file name="...">...</file>` blocks.
+- `review_ui_screenshot` is designed for render-review loops: feed its JSON critique back into later code or design prompts.
+- `save_ui_review` validates the review JSON structure before saving, so screenshot critique can become a reusable refinement artifact.

@@ -8,6 +8,7 @@ import { registerCodeTools } from "./tools/code-generator.js";
 import { registerDesignSpecTools } from "./tools/design-spec.js";
 import { registerMoodBoardTools } from "./tools/mood-board.js";
 import { registerPaletteTools } from "./tools/palette.js";
+import { registerUiReviewTools } from "./tools/ui-review.js";
 
 const server = new McpServer({
   name: "app-soul-mcp",
@@ -20,6 +21,7 @@ registerPaletteTools(server);
 registerAssetTools(server);
 registerDesignSpecTools(server);
 registerCodeTools(server);
+registerUiReviewTools(server);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
