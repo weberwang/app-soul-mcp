@@ -4,9 +4,14 @@ import path from "path";
 import { z } from "zod";
 import { env } from "../lib/env.js";
 
+function stripMarkdownCodeFence(raw: string): string {
+  return raw.replace(/^```(?:json)?\s*|\s*```$/g, "").trim();
+}
+
 // Returned to the calling AI so it can generate the brand guide itself.
 // The AI has full generative capability — no need to duplicate it here.
 const BRAND_GUIDE_SCHEMA = `{
+  "_note": "This is a JSON template. Keep all keys exactly as written, but replace placeholder values with real content.",
   "_thought": "string", // Reason through the 3 areas (Core Emotions, Visual Metaphors, Anti-Goals) explicitly here before filling other fields.
 
   "appName": "string",
@@ -16,17 +21,17 @@ const BRAND_GUIDE_SCHEMA = `{
   // ── Core Emotional Keywords ───────────────────────────────────────────────
   // What the user must FEEL when using the app (3–5 specific adjectives).
   // These drive every visual and copy decision downstream.
-  "coreEmotions": string[],
+  "coreEmotions": ["string"],
 
   // ── Visual Metaphors ─────────────────────────────────────────────────────
   // Real-world physical objects whose material qualities, proportions, and
   // interactions directly inspire the UI's surfaces, shapes, and motion.
   "visualMetaphors": {
-    "primary": string,        // one dominant real-world object (e.g. "Japanese washi paper notebook")
-    "secondary": string[],   // 3–5 supporting objects that share the same textural or spatial feel
-    "designImplications": string[], // how each metaphor translates: surface texture → color/elevation style,
+    "primary": "string",        // one dominant real-world object (e.g. "Japanese washi paper notebook")
+    "secondary": ["string"],   // 3–5 supporting objects that share the same textural or spatial feel
+    "designImplications": ["string"], // how each metaphor translates: surface texture → color/elevation style,
                                     // object proportions → border-radius, object weight → motion easing, etc.
-    "searchKeywordsEn": string[]    // English search keywords for finding UI/UX reference images on Dribbble / Mobbin / Behance.
+    "searchKeywordsEn": ["string"]    // English search keywords for finding UI/UX reference images on Dribbble / Mobbin / Behance.
                                     // MUST be app/screen/interface oriented — e.g. "finance app dark UI",
                                     // "minimal onboarding screen", "wellness app card layout".
                                     // NEVER use generic photography terms (landscapes, people, food, nature).
@@ -37,29 +42,29 @@ const BRAND_GUIDE_SCHEMA = `{
   // These are brand-level prohibitions, not implementation patterns.
   // Example: "corporate dashboard coldness", "gamified notification spam",
   //          "glossy hyper-saturated social media energy"
-  "antiGoals": string[],
+  "antiGoals": ["string"],
 
   "colorDirection": {
-    "mood": string,
-    "backgroundSuggestion": string,
-    "accentSuggestion": string,
-    "avoidColors": string[]
+    "mood": "string",
+    "backgroundSuggestion": "string",
+    "accentSuggestion": "string",
+    "avoidColors": ["string"]
   },
   "typography": {
-    "voiceDescription": string,
-    "avoid": string[]
+    "voiceDescription": "string",
+    "avoid": ["string"]
   },
 
   // ── Anti-Patterns ────────────────────────────────────────────────────────
   // Specific UI/UX implementation patterns that contradict the brand.
-  "antiPatterns": string[],
+  "antiPatterns": ["string"],
 
-  "uiPrinciples": string[],
+  "uiPrinciples": ["string"],
   "copyTone": {
-    "style": string,
-    "exampleCta": string,
-    "exampleEmptyState": string,
-    "avoid": string[]
+    "style": "string",
+    "exampleCta": "string",
+    "exampleEmptyState": "string",
+    "avoid": ["string"]
   }
 }`;
 
@@ -145,6 +150,7 @@ Examples of well-written anti-goals:
 Anti-goals must be specific enough to rule out real, generic design directions.
 Then derive antiPatterns as specific UI/UX implementations that would produce those anti-goal atmospheres.
 
+The schema below is a JSON template, not JSON Schema syntax. Keep the keys and structure exactly, replace placeholder values with concrete content, and omit the \`_note\` field in your final output.
 Return ONLY valid JSON matching this schema. All your reasoning MUST go into the \`_thought\` field.
 ${BRAND_GUIDE_SCHEMA}`;
 
@@ -176,8 +182,7 @@ ${BRAND_GUIDE_SCHEMA}`;
       // Validate JSON before saving
       let parsed: unknown;
       try {
-        const cleanJson = brandGuideJson.replace(/^```json\s*|\s*```$/g, "").trim();
-        parsed = JSON.parse(cleanJson);
+        parsed = JSON.parse(stripMarkdownCodeFence(brandGuideJson));
       } catch {
         return {
           content: [

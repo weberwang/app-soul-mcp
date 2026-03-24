@@ -2,8 +2,32 @@ import fs from "fs/promises";
 import path from "path";
 import { z } from "zod";
 import { env } from "../lib/env.js";
-function getMimeType(filePath) {
-    const ext = path.extname(filePath).toLowerCase();
+function detectMimeType(buffer, filePath) {
+    if (buffer.length >= 12 &&
+        buffer.toString("ascii", 0, 4) === "RIFF" &&
+        buffer.toString("ascii", 8, 12) === "WEBP") {
+        return "image/webp";
+    }
+    if (buffer.length >= 8 &&
+        buffer[0] === 0x89 &&
+        buffer[1] === 0x50 &&
+        buffer[2] === 0x4e &&
+        buffer[3] === 0x47 &&
+        buffer[4] === 0x0d &&
+        buffer[5] === 0x0a &&
+        buffer[6] === 0x1a &&
+        buffer[7] === 0x0a) {
+        return "image/png";
+    }
+    if (buffer.length >= 6 &&
+        (buffer.toString("ascii", 0, 6) === "GIF87a" ||
+            buffer.toString("ascii", 0, 6) === "GIF89a")) {
+        return "image/gif";
+    }
+    if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+        return "image/jpeg";
+    }
+    const ext = filePath ? path.extname(filePath).toLowerCase() : "";
     if (ext === ".png")
         return "image/png";
     if (ext === ".webp")
@@ -16,10 +40,12 @@ function getMimeType(filePath) {
 // (Copilot) knows exactly what structured output to produce.
 const ANALYSIS_INSTRUCTIONS = {
     palette: `Analyze the image and extract its color palette. Return a JSON object with:
+- "_thought": short reasoning about why these colors matter for UI and which generic palette tropes you avoided
 - "colors": array of 5 objects, each with "role" (background/surface/accent/text-secondary/text), "hex" (closest hex value), and "description" (one evocative word like "warm amber" or "dusty slate")
 - "colorMood": one sentence describing the overall color temperature and feeling
 Return ONLY valid JSON, no markdown.`,
     style: `Analyze this image's visual style for UI/app design inspiration. Return a JSON object with:
+- "_thought": short reasoning about what makes this image feel specific rather than generic UI inspiration
 - "visualMetaphors": array of 3-5 real-world objects this image evokes (e.g. "aged leather", "frosted glass")
 - "styleKeywords": array of 5-8 descriptors useful as image generation keywords
 - "uiPrinciples": array of 3-4 design principles this image suggests (e.g. "generous whitespace", "tactile textures")
@@ -27,6 +53,7 @@ Return ONLY valid JSON, no markdown.`,
 - "atmosphere": one sentence capturing the emotional tone
 Return ONLY valid JSON, no markdown.`,
     figma: `Analyze this UI design screenshot to extract specifications for code generation. Return a JSON object with:
+- "_thought": short reasoning about the visual hierarchy and any non-generic patterns worth preserving in code
 - "layout": overall layout structure (grid, spacing, alignment)
 - "colorUsage": how colors are applied (background, cards, text, accents)
 - "typography": font sizes, weights, and hierarchy observed
@@ -35,6 +62,7 @@ Return ONLY valid JSON, no markdown.`,
 - "codeNotes": 3-5 specific implementation notes for a developer
 Return ONLY valid JSON, no markdown.`,
     full: `Analyze this image comprehensively for app UI design. Return a JSON object combining:
+- "_thought": short reasoning about the palette, materials, and what prevents this from feeling like stock AI-generated UI
 - "palette": 5 colors with role, hex, description
 - "colorMood": overall color feeling
 - "styleKeywords": 5-8 generation keywords
@@ -70,7 +98,7 @@ export function registerAssetTools(server) {
                 {
                     type: "image",
                     data: imageBuffer.toString("base64"),
-                    mimeType: getMimeType(resolvedPath),
+                    mimeType: detectMimeType(imageBuffer, resolvedPath),
                 },
             ],
         };
@@ -93,7 +121,7 @@ export function registerAssetTools(server) {
                 ],
             };
         }
-        const imageFiles = entries.filter((f) => /\.(jpe?g|png|webp)$/i.test(f));
+        const imageFiles = entries.filter((f) => /\.(jpe?g|png|webp|gif)$/i.test(f));
         if (imageFiles.length === 0) {
             return {
                 content: [
@@ -114,7 +142,7 @@ export function registerAssetTools(server) {
                 contentItems.push({
                     type: "image",
                     data: buffer.toString("base64"),
-                    mimeType: getMimeType(fullPath),
+                    mimeType: detectMimeType(buffer, fullPath),
                 });
             }
             catch {

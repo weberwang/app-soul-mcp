@@ -2,27 +2,33 @@ import fs from "fs/promises";
 import path from "path";
 import { z } from "zod";
 import { env } from "../lib/env.js";
+function stripMarkdownCodeFence(raw) {
+    return raw.replace(/^```(?:json)?\s*|\s*```$/g, "").trim();
+}
 // Returned to the calling AI so it can generate the brand guide itself.
 // The AI has full generative capability — no need to duplicate it here.
 const BRAND_GUIDE_SCHEMA = `{
-  "appName": string,
-  "tagline": string,
-  "targetUser": string,
+  "_note": "This is a JSON template. Keep all keys exactly as written, but replace placeholder values with real content.",
+  "_thought": "string", // Reason through the 3 areas (Core Emotions, Visual Metaphors, Anti-Goals) explicitly here before filling other fields.
+
+  "appName": "string",
+  "tagline": "string",
+  "targetUser": "string",
 
   // ── Core Emotional Keywords ───────────────────────────────────────────────
   // What the user must FEEL when using the app (3–5 specific adjectives).
   // These drive every visual and copy decision downstream.
-  "coreEmotions": string[],
+  "coreEmotions": ["string"],
 
   // ── Visual Metaphors ─────────────────────────────────────────────────────
   // Real-world physical objects whose material qualities, proportions, and
   // interactions directly inspire the UI's surfaces, shapes, and motion.
   "visualMetaphors": {
-    "primary": string,        // one dominant real-world object (e.g. "Japanese washi paper notebook")
-    "secondary": string[],   // 3–5 supporting objects that share the same textural or spatial feel
-    "designImplications": string[], // how each metaphor translates: surface texture → color/elevation style,
+    "primary": "string",        // one dominant real-world object (e.g. "Japanese washi paper notebook")
+    "secondary": ["string"],   // 3–5 supporting objects that share the same textural or spatial feel
+    "designImplications": ["string"], // how each metaphor translates: surface texture → color/elevation style,
                                     // object proportions → border-radius, object weight → motion easing, etc.
-    "searchKeywordsEn": string[]    // English search keywords for finding UI/UX reference images on Dribbble / Mobbin / Behance.
+    "searchKeywordsEn": ["string"]    // English search keywords for finding UI/UX reference images on Dribbble / Mobbin / Behance.
                                     // MUST be app/screen/interface oriented — e.g. "finance app dark UI",
                                     // "minimal onboarding screen", "wellness app card layout".
                                     // NEVER use generic photography terms (landscapes, people, food, nature).
@@ -33,29 +39,29 @@ const BRAND_GUIDE_SCHEMA = `{
   // These are brand-level prohibitions, not implementation patterns.
   // Example: "corporate dashboard coldness", "gamified notification spam",
   //          "glossy hyper-saturated social media energy"
-  "antiGoals": string[],
+  "antiGoals": ["string"],
 
   "colorDirection": {
-    "mood": string,
-    "backgroundSuggestion": string,
-    "accentSuggestion": string,
-    "avoidColors": string[]
+    "mood": "string",
+    "backgroundSuggestion": "string",
+    "accentSuggestion": "string",
+    "avoidColors": ["string"]
   },
   "typography": {
-    "voiceDescription": string,
-    "avoid": string[]
+    "voiceDescription": "string",
+    "avoid": ["string"]
   },
 
   // ── Anti-Patterns ────────────────────────────────────────────────────────
   // Specific UI/UX implementation patterns that contradict the brand.
-  "antiPatterns": string[],
+  "antiPatterns": ["string"],
 
-  "uiPrinciples": string[],
+  "uiPrinciples": ["string"],
   "copyTone": {
-    "style": string,
-    "exampleCta": string,
-    "exampleEmptyState": string,
-    "avoid": string[]
+    "style": "string",
+    "exampleCta": "string",
+    "exampleEmptyState": "string",
+    "avoid": ["string"]
   }
 }`;
 export function registerBrandGuideTools(server) {
@@ -95,21 +101,21 @@ ${antiGoalSection}
 
 ## Reasoning Instructions
 
-Work through these three areas explicitly in your thinking before producing JSON:
+Work through these three areas explicitly in your thinking inside the \`_thought\` field before producing the rest of the JSON. Do not write text outside the JSON block.
 
 **1. Core Emotional Keywords**
 Identify 3–5 precise emotional adjectives that describe the user's ideal experience.
 Be specific: not "good" but "quietly confident"; not "fast" but "effortlessly frictionless".
 These keywords must be strong enough to act as a filter: if a design decision contradicts any keyword, that decision is wrong.
 
-**2. Visual Metaphors**
-Choose real-world physical objects, materials, or spaces whose sensory qualities directly inspire the UI.
+**2. Visual Metaphors (CRITICAL: AVOID DEFAULT FLAT UI)**
+Choose real-world physical objects, materials, or spaces whose sensory qualities directly inspire the UI. You MUST map the design to a physical texture or material nature to avoid generic flat UI (like Bootstrap/Material). Can be "washi paper", "frosted glass", "analogue synthesizer", "etched metal", etc.
 For each metaphor, articulate the design implication:
-- Surface quality (e.g. matte paper → low-gloss flat surfaces, no harsh drop shadows)
+- Surface quality (e.g. matte paper → low-gloss flat surfaces, no harsh drop shadows; avoid pure #FFFFFF or #000000)
 - Proportions (e.g. slim pocket notebook → compact cards, tight spacing)
 - Weight and movement (e.g. smooth river stone → slow, organic motion curves)
 - Light interaction (e.g. frosted glass → translucent overlays, diffused light)
-The metaphors must be consistent with coreEmotions and coherent with each other — they should feel like they belong to the same physical world.
+The metaphors must be consistent with coreEmotions and coherent with each other.
 
 For searchKeywordsEn, generate 6–10 English phrases specifically for finding UI/UX design references on sites like Dribbble, Mobbin, Behance, and Figma Community. Every keyword must describe a screen, interface, or design pattern — never a real-world scene, person, landscape, or object photograph. Structure them as:
 - "[adjective] [app-type] [platform/medium]" — e.g. "minimal finance app iOS"
@@ -118,19 +124,18 @@ For searchKeywordsEn, generate 6–10 English phrases specifically for finding U
 Bad keywords (will return wrong content): "washi paper texture", "mountain lake", "cozy coffee shop", "woman using phone".
 Good keywords (will return design references): "soft pastel wellness app", "clean budgeting dashboard dark mode", "organic card UI mobile".
 
-**3. Anti-Goals**
+**3. Anti-Goals (FIGHT AI STEREOTYPES)**
 Define what the app must NEVER feel like — the brand's negative space.
-Anti-goals are not about specific widgets; they are about atmosphere and emotional register.
+Force yourself away from standard default designs. Explicitly ban default patterns if they conflict with the brand.
 Examples of well-written anti-goals:
-- "Cold, data-centric dashboard that prioritises density over breath"
+- "Cold, data-centric dashboard that prioritizes density over breath"
+- "Generic SaaS aesthetic with default system blue and pure gray text"
 - "Gamified reward loop that manufactures urgency"
-- "Glossy consumer app with hyper-saturated hero images"
-Anti-goals must be specific enough to rule out real design directions.
+Anti-goals must be specific enough to rule out real, generic design directions.
 Then derive antiPatterns as specific UI/UX implementations that would produce those anti-goal atmospheres.
 
-Only after reasoning through all three, output the JSON.
-
-Return ONLY valid JSON matching this schema — no markdown fences, no extra text:
+The schema below is a JSON template, not JSON Schema syntax. Keep the keys and structure exactly, replace placeholder values with concrete content, and omit the \`_note\` field in your final output.
+Return ONLY valid JSON matching this schema. All your reasoning MUST go into the \`_thought\` field.
 ${BRAND_GUIDE_SCHEMA}`;
         return {
             content: [{ type: "text", text: prompt }],
@@ -150,7 +155,7 @@ ${BRAND_GUIDE_SCHEMA}`;
         // Validate JSON before saving
         let parsed;
         try {
-            parsed = JSON.parse(brandGuideJson);
+            parsed = JSON.parse(stripMarkdownCodeFence(brandGuideJson));
         }
         catch {
             return {

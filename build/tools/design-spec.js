@@ -2,8 +2,13 @@ import fs from "fs/promises";
 import path from "path";
 import { z } from "zod";
 import { env } from "../lib/env.js";
+function stripMarkdownCodeFence(raw) {
+    return raw.replace(/^```(?:json)?\s*|\s*```$/g, "").trim();
+}
 // The JSON schema that Copilot must return. Used in the prompt below.
 const DESIGN_SPEC_SCHEMA = `{
+  "_note": "This is a JSON template. Keep the keys exactly as written, replace placeholder values with concrete values, and omit _note in the final output.",
+  "_thought": "string", // Record Phase 1 reasoning here. Include contrast checks, tone pairing logic, and how you avoided generic default UI choices.
   "colorTokens": {
     "light": {
       // ── Surfaces ──────────────────────────────────────────────────────────
@@ -298,16 +303,19 @@ All these surfaces and text colors appear together. Ask: do they form a coherent
 **6. State coherence**
 Interactive states (hover, pressed, focused, disabled) must feel like the same element shifting — never a different color entirely. Disabled is always inkDisabled regardless of the surface.
 
-Only after completing Phase 1 in your reasoning, proceed to output the JSON.
+Write all of Phase 1 explicitly into the \`_thought\` field in the root of the JSON schema. Do not write anything outside the JSON.
+In \`_thought\`, explicitly reject any generic UI tendencies you considered and explain what replaced them.
 
 ## Phase 2 — Output the Design Specification
 
 Generate a comprehensive UI/UX design specification as strict JSON.
 
 Color token rules:
-- All hex values must be specific (e.g. "#FAF8F5", never "warm white" or vague descriptions)
-- Dark mode surfaces: use dark neutrals with subtle warmth or tint matching the brand hue — avoid flat #121212 unless the brand explicitly calls for it
-- inkTertiary is for placeholder / decorative labels only — never for meaningful content
+- **TINTED NEUTRALS ONLY:** Pure grey (#333333, #666666, #CCCCCC) is STRICTLY PROHIBITED. All neutral / surface / ink colors must be tinted with the main brand hue (e.g. #2C2D30 instead of #333333, or #F5F5F4 instead of #F0F0F0).
+- **NO PURE WHITE/BLACK:** Never use exactly #FFFFFF or #000000. Off-white and off-black are required to remove the default digital harshness.
+- All hex values must be specific (e.g. "#FAF8F5").
+- Dark mode surfaces: use dark neutrals with subtle warmth or tint matching the brand hue — avoid flat #121212.
+- inkTertiary is for placeholder / decorative labels only — never for meaningful content.
 - inkOnImage: prefer near-white (#FFFFFF or near) — it must survive both light and dark photo backgrounds
 - Status subtle backgrounds must be low-saturation tints; their Ink tokens must pass WCAG AA on them
 - navBar* and appBar* must be intentional brand colors, not default grey
@@ -317,6 +325,9 @@ Color token rules:
 - frameworkScrim: semi-transparent overlay, e.g. "rgba(0,0,0,0.5)" — adjust for dark mode
 
 Other rules:
+- The interface must feel intentional and specific, not like a generic SaaS dashboard or stock mobile kit
+- Typography choices must have character; avoid default system-looking hierarchies unless the brand explicitly demands restraint
+- Components should reflect the metaphors from the brand guide in shape, density, and motion, not just color
 - Typography scale must reflect the brand voice; prefer readable body sizing over flashy display
 - All spacing values must be multiples of the baseUnit (4 or 8)
 - Motion durations and easing must match the brand's emotional register
@@ -325,6 +336,7 @@ Other rules:
 - platformNotes must address ${platform}-specific theme API details (widget names, ColorScheme fields, etc.) and explain how to wire every framework token into the theme
 - patterns.successFeedback must NOT use SnackBar, Toast, or alert dialogs — describe a subtle in-context approach
 
+The template below is JSON-shaped guidance, not JSON Schema syntax. Keep every key, replace placeholders with real values, and omit the \`_note\` field in the final output.
 Return ONLY valid JSON matching this exact schema — no markdown fences, no extra text:
 ${DESIGN_SPEC_SCHEMA}`;
         return { content: [{ type: "text", text: prompt }] };
@@ -342,7 +354,7 @@ ${DESIGN_SPEC_SCHEMA}`;
         await fs.mkdir(path.dirname(filePath), { recursive: true });
         let parsed;
         try {
-            parsed = JSON.parse(designSpecJson);
+            parsed = JSON.parse(stripMarkdownCodeFence(designSpecJson));
         }
         catch {
             return {

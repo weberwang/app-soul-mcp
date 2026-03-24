@@ -9,7 +9,7 @@ import { registerMoodBoardTools } from "./tools/mood-board.js";
 import { registerPaletteTools } from "./tools/palette.js";
 const server = new McpServer({
     name: "app-soul-mcp",
-    version: "1.0.0",
+    version: "1.0.10",
 });
 registerBrandGuideTools(server);
 registerMoodBoardTools(server);

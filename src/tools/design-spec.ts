@@ -4,9 +4,14 @@ import path from "path";
 import { z } from "zod";
 import { env } from "../lib/env.js";
 
+function stripMarkdownCodeFence(raw: string): string {
+  return raw.replace(/^```(?:json)?\s*|\s*```$/g, "").trim();
+}
+
 // The JSON schema that Copilot must return. Used in the prompt below.
 const DESIGN_SPEC_SCHEMA = `{
-  "_thought": "string, // Record your step-by-step reasoning (Phase 1) here. Calculate contrast ratios and explain your tinted neutrals. BAN pure grey/black/white.",
+  "_note": "This is a JSON template. Keep the keys exactly as written, replace placeholder values with concrete values, and omit _note in the final output.",
+  "_thought": "string", // Record Phase 1 reasoning here. Include contrast checks, tone pairing logic, and how you avoided generic default UI choices.
   "colorTokens": {
     "light": {
       // ── Surfaces ──────────────────────────────────────────────────────────
@@ -314,6 +319,7 @@ All these surfaces and text colors appear together. Ask: do they form a coherent
 Interactive states (hover, pressed, focused, disabled) must feel like the same element shifting — never a different color entirely. Disabled is always inkDisabled regardless of the surface.
 
 Write all of Phase 1 explicitly into the \`_thought\` field in the root of the JSON schema. Do not write anything outside the JSON.
+In \`_thought\`, explicitly reject any generic UI tendencies you considered and explain what replaced them.
 
 ## Phase 2 — Output the Design Specification
 
@@ -334,6 +340,9 @@ Color token rules:
 - frameworkScrim: semi-transparent overlay, e.g. "rgba(0,0,0,0.5)" — adjust for dark mode
 
 Other rules:
+- The interface must feel intentional and specific, not like a generic SaaS dashboard or stock mobile kit
+- Typography choices must have character; avoid default system-looking hierarchies unless the brand explicitly demands restraint
+- Components should reflect the metaphors from the brand guide in shape, density, and motion, not just color
 - Typography scale must reflect the brand voice; prefer readable body sizing over flashy display
 - All spacing values must be multiples of the baseUnit (4 or 8)
 - Motion durations and easing must match the brand's emotional register
@@ -342,6 +351,7 @@ Other rules:
 - platformNotes must address ${platform}-specific theme API details (widget names, ColorScheme fields, etc.) and explain how to wire every framework token into the theme
 - patterns.successFeedback must NOT use SnackBar, Toast, or alert dialogs — describe a subtle in-context approach
 
+The template below is JSON-shaped guidance, not JSON Schema syntax. Keep every key, replace placeholders with real values, and omit the \`_note\` field in the final output.
 Return ONLY valid JSON matching this exact schema — no markdown fences, no extra text:
 ${DESIGN_SPEC_SCHEMA}`;
 
@@ -370,7 +380,7 @@ ${DESIGN_SPEC_SCHEMA}`;
 
       let parsed: unknown;
       try {
-        parsed = JSON.parse(designSpecJson);
+        parsed = JSON.parse(stripMarkdownCodeFence(designSpecJson));
       } catch {
         return {
           content: [

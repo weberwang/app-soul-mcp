@@ -17,12 +17,13 @@ Tech stack: {TECH_STACK}
 Requirements:
 - Cover every listed screen with working navigation between them
 - Use realistic placeholder content — not lorem ipsum or "TODO" text
-- Interface copy must feel human and warm, not robotic or system-like
+- Interface copy must feel human and specific to the product, not robotic, generic, or system-like
+- Avoid default UI-kit aesthetics; the layout, typography, and surfaces should feel chosen, not inherited from a starter template
 - Focus on UX flow correctness over visual polish
-- Each file as a separate <file name="..."> block (name and extension appropriate for the tech stack)
+- Each file as a separate <code_file name="..."> block (name and extension appropriate for the tech stack)
 
 Output format — wrap each output file in XML-like blocks:
-<file name="filename.ext">...file content...</file>\n
+<code_file name="filename.ext">...file content...</code_file>\n
 Do not explain the code. Output only the file blocks.`;
 
 const FINAL_CODE_PROMPT_TEMPLATE = `You are a senior {TECH_STACK} developer.
@@ -49,14 +50,20 @@ Requirements:
 - Copy tone: {COPY_TONE}
 - Anti-patterns to avoid: {ANTI_PATTERNS}
 - UI principles to follow: {UI_PRINCIPLES}
+- The output must not look like a default admin dashboard, boilerplate landing page, or starter-app scaffold
+- Microcopy must sound like the product's voice in buttons, empty states, helper text, and confirmations
 
-Wrap each output file in <file name="...">...</file> blocks.`;
+Wrap each output file in <code_file name="...">...</code_file> blocks.`;
 
 interface BrandGuide {
   copyTone?: { style?: string };
   antiPatterns?: string[];
   uiPrinciples?: string[];
   [key: string]: unknown;
+}
+
+function stripMarkdownCodeFence(raw: string): string {
+  return raw.replace(/^```(?:json)?\s*|\s*```$/g, "").trim();
 }
 
 async function saveFiles(
@@ -74,7 +81,7 @@ async function saveFiles(
 }
 
 function parseFileBlocks(raw: string): { name: string; content: string }[] {
-  const regex = /<file name="([^"]+)">([\s\S]*?)<\/file>/g;
+  const regex = /<(?:code_file|file) name="([^"]+)">([\s\S]*?)<\/(?:code_file|file)>/g;
   const blocks: { name: string; content: string }[] = [];
   let match;
   while ((match = regex.exec(raw)) !== null) {
@@ -140,8 +147,10 @@ export function registerCodeTools(server: McpServer): void {
     },
     async ({ appName, techStack, brandGuide, designSpec, existingCode }) => {
       let parsedGuide: BrandGuide = {};
+      const cleanBrandGuide = stripMarkdownCodeFence(brandGuide);
+      const cleanDesignSpec = stripMarkdownCodeFence(designSpec);
       try {
-        parsedGuide = JSON.parse(brandGuide) as BrandGuide;
+        parsedGuide = JSON.parse(cleanBrandGuide) as BrandGuide;
       } catch {
         // Use raw string if not valid JSON
       }
@@ -156,7 +165,7 @@ export function registerCodeTools(server: McpServer): void {
       )
         .replace("{APP_NAME}", appName)
         .replace("{BRAND_GUIDE}", JSON.stringify(parsedGuide, null, 2))
-        .replace("{DESIGN_SPEC}", designSpec)
+        .replace("{DESIGN_SPEC}", cleanDesignSpec)
         .replace("{EXISTING_CODE_SECTION}", existingCodeSection)
         .replace(
           "{COPY_TONE}",
@@ -177,12 +186,12 @@ export function registerCodeTools(server: McpServer): void {
 
   server.tool(
     "save_code_files",
-    'Parse <file name="...">...</file> blocks from AI-generated code and save each file to disk. Use after get_prototype_prompt or get_final_code_prompt generation.',
+    'Parse <code_file name="...">...</code_file> blocks from AI-generated code and save each file to disk. Also accepts legacy <file> blocks for compatibility. Use after get_prototype_prompt or get_final_code_prompt generation.',
     {
       generatedOutput: z
         .string()
         .describe(
-          'Raw AI output containing <file name="...">...</file> blocks',
+          'Raw AI output containing <code_file name="...">...</code_file> blocks',
         ),
       outputDir: z
         .string()
@@ -204,7 +213,7 @@ export function registerCodeTools(server: McpServer): void {
               type: "text",
               text: JSON.stringify(
                 {
-                  note: "No <file> blocks found — saved raw output.",
+                  note: "No code_file/file blocks found — saved raw output.",
                   path: fallbackPath,
                 },
                 null,
