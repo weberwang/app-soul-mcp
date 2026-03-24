@@ -8,6 +8,168 @@ function stripMarkdownCodeFence(raw: string): string {
   return raw.replace(/^```(?:json)?\s*|\s*```$/g, "").trim();
 }
 
+const nonEmptyString = z.string().trim().min(1);
+const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
+const rgbaColor = z.string().regex(/^rgba\(\s*(?:\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\s*,\s*(?:\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\s*,\s*(?:\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\s*,\s*(?:0|1|0?\.\d+)\s*\)$/);
+const colorToken = hexColor;
+const scrimToken = z.union([hexColor, rgbaColor]);
+
+const lightDarkColorTokensSchema = z.object({
+  surfacePrimary: colorToken,
+  surfaceSecondary: colorToken,
+  surfaceTertiary: colorToken,
+  surfaceTint: colorToken,
+  surfaceInverse: colorToken,
+  inkPrimary: colorToken,
+  inkSecondary: colorToken,
+  inkTertiary: colorToken,
+  inkDisabled: colorToken,
+  inkOnAccent: colorToken,
+  inkOnSurfaceInverse: colorToken,
+  inkLink: colorToken,
+  inkOnImage: colorToken,
+  accentPrimary: colorToken,
+  accentSecondary: colorToken,
+  accentSubtle: colorToken,
+  borderSubtle: colorToken,
+  borderStrong: colorToken,
+  borderInteractive: colorToken,
+  statusSuccess: colorToken,
+  statusSuccessSubtle: colorToken,
+  statusSuccessInk: colorToken,
+  statusWarning: colorToken,
+  statusWarningSubtle: colorToken,
+  statusWarningInk: colorToken,
+  statusError: colorToken,
+  statusErrorSubtle: colorToken,
+  statusErrorInk: colorToken,
+  statusInfo: colorToken,
+  statusInfoSubtle: colorToken,
+  statusInfoInk: colorToken,
+  navBarBackground: colorToken,
+  navBarActiveIcon: colorToken,
+  navBarInactiveIcon: colorToken,
+  navBarIndicator: colorToken,
+  appBarBackground: colorToken,
+  appBarInk: colorToken,
+  inputFill: colorToken,
+  inputFillFocused: colorToken,
+  inputInk: colorToken,
+  inputPlaceholder: colorToken,
+  inputBorder: colorToken,
+  inputBorderFocused: colorToken,
+  inputBorderError: colorToken,
+  inputLabelActive: colorToken,
+  frameworkPrimary: colorToken,
+  frameworkOnPrimary: colorToken,
+  frameworkPrimaryContainer: colorToken,
+  frameworkOnPrimaryContainer: colorToken,
+  frameworkSecondary: colorToken,
+  frameworkOnSecondary: colorToken,
+  frameworkSurface: colorToken,
+  frameworkOnSurface: colorToken,
+  frameworkSurfaceVariant: colorToken,
+  frameworkOnSurfaceVariant: colorToken,
+  frameworkOutline: colorToken,
+  frameworkOutlineVariant: colorToken,
+  frameworkError: colorToken,
+  frameworkOnError: colorToken,
+  frameworkScrim: scrimToken,
+});
+
+const designSpecSchema = z.object({
+  _thought: nonEmptyString,
+  colorTokens: z.object({
+    light: lightDarkColorTokensSchema,
+    dark: lightDarkColorTokensSchema,
+  }),
+  typography: z.object({
+    fontFamilies: z.object({
+      display: nonEmptyString,
+      body: nonEmptyString,
+      mono: nonEmptyString,
+    }),
+    scale: z.array(z.object({
+      token: nonEmptyString,
+      sizePx: z.number().positive(),
+      weight: z.number().positive(),
+      lineHeight: z.number().positive(),
+      letterSpacing: z.number(),
+      usage: nonEmptyString,
+    })).min(3),
+  }),
+  spacing: z.object({
+    baseUnit: z.number().refine((value) => value === 4 || value === 8, {
+      message: "baseUnit must be 4 or 8",
+    }),
+    scale: z.object({
+      xs: z.number().nonnegative(),
+      sm: z.number().nonnegative(),
+      md: z.number().nonnegative(),
+      lg: z.number().nonnegative(),
+      xl: z.number().nonnegative(),
+      "2xl": z.number().nonnegative(),
+      "3xl": z.number().nonnegative(),
+    }),
+  }),
+  borderRadius: z.object({
+    sm: z.number().nonnegative(),
+    md: z.number().nonnegative(),
+    lg: z.number().nonnegative(),
+    xl: z.number().nonnegative(),
+    full: z.number().nonnegative(),
+  }),
+  motion: z.object({
+    durationFast: z.number().nonnegative(),
+    durationDefault: z.number().nonnegative(),
+    durationSlow: z.number().nonnegative(),
+    easing: nonEmptyString,
+    principles: z.array(nonEmptyString).min(3).max(5),
+  }),
+  components: z.object({
+    button: z.object({
+      height: z.number().positive(),
+      radius: z.number().nonnegative(),
+      labelTypography: nonEmptyString,
+      paddingH: z.number().nonnegative(),
+      notes: nonEmptyString,
+    }),
+    card: z.object({
+      padding: z.number().nonnegative(),
+      radius: z.number().nonnegative(),
+      elevation: nonEmptyString,
+      notes: nonEmptyString,
+    }),
+    inputField: z.object({
+      height: z.number().positive(),
+      radius: z.number().nonnegative(),
+      notes: nonEmptyString,
+    }),
+    listTile: z.object({
+      paddingV: z.number().nonnegative(),
+      paddingH: z.number().nonnegative(),
+      divider: nonEmptyString,
+    }),
+    bottomSheet: z.object({
+      topRadius: z.number().nonnegative(),
+      notes: nonEmptyString,
+    }),
+  }),
+  patterns: z.object({
+    emptyState: nonEmptyString,
+    loadingState: nonEmptyString,
+    errorState: nonEmptyString,
+    successFeedback: nonEmptyString,
+  }),
+  accessibility: z.object({
+    minimumContrastRatio: z.number().min(4.5),
+    minimumTapTargetPx: z.number().min(44),
+    notes: z.array(nonEmptyString).min(1),
+  }),
+  antiPatterns: z.array(nonEmptyString).min(2),
+  platformNotes: nonEmptyString,
+});
+
 // The JSON schema that Copilot must return. Used in the prompt below.
 const DESIGN_SPEC_SCHEMA = `{
   "_note": "This is a JSON template. Keep the keys exactly as written, replace placeholder values with concrete values, and omit _note in the final output.",
@@ -392,7 +554,21 @@ ${DESIGN_SPEC_SCHEMA}`;
         };
       }
 
-      await fs.writeFile(filePath, JSON.stringify(parsed, null, 2), "utf-8");
+      const validation = designSpecSchema.safeParse(parsed);
+      if (!validation.success) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Design spec failed validation:\n${validation.error.issues
+                .map((issue) => `- ${issue.path.join(".") || "root"}: ${issue.message}`)
+                .join("\n")}`,
+            },
+          ],
+        };
+      }
+
+      await fs.writeFile(filePath, JSON.stringify(validation.data, null, 2), "utf-8");
       return {
         content: [
           {

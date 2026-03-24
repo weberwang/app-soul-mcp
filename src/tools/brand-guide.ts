@@ -8,6 +8,41 @@ function stripMarkdownCodeFence(raw: string): string {
   return raw.replace(/^```(?:json)?\s*|\s*```$/g, "").trim();
 }
 
+const nonEmptyString = z.string().trim().min(1);
+
+const brandGuideSchema = z.object({
+  _thought: nonEmptyString,
+  appName: nonEmptyString,
+  tagline: nonEmptyString,
+  targetUser: nonEmptyString,
+  coreEmotions: z.array(nonEmptyString).min(3).max(5),
+  visualMetaphors: z.object({
+    primary: nonEmptyString,
+    secondary: z.array(nonEmptyString).min(3).max(5),
+    designImplications: z.array(nonEmptyString).min(3),
+    searchKeywordsEn: z.array(nonEmptyString).min(6).max(10),
+  }),
+  antiGoals: z.array(nonEmptyString).min(2),
+  colorDirection: z.object({
+    mood: nonEmptyString,
+    backgroundSuggestion: nonEmptyString,
+    accentSuggestion: nonEmptyString,
+    avoidColors: z.array(nonEmptyString).min(1),
+  }),
+  typography: z.object({
+    voiceDescription: nonEmptyString,
+    avoid: z.array(nonEmptyString).min(1),
+  }),
+  antiPatterns: z.array(nonEmptyString).min(2),
+  uiPrinciples: z.array(nonEmptyString).min(3),
+  copyTone: z.object({
+    style: nonEmptyString,
+    exampleCta: nonEmptyString,
+    exampleEmptyState: nonEmptyString,
+    avoid: z.array(nonEmptyString).min(1),
+  }),
+});
+
 // Returned to the calling AI so it can generate the brand guide itself.
 // The AI has full generative capability — no need to duplicate it here.
 const BRAND_GUIDE_SCHEMA = `{
@@ -191,7 +226,21 @@ ${BRAND_GUIDE_SCHEMA}`;
         };
       }
 
-      const normalized = JSON.stringify(parsed, null, 2);
+      const validation = brandGuideSchema.safeParse(parsed);
+      if (!validation.success) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Brand guide failed validation:\n${validation.error.issues
+                .map((issue) => `- ${issue.path.join(".") || "root"}: ${issue.message}`)
+                .join("\n")}`,
+            },
+          ],
+        };
+      }
+
+      const normalized = JSON.stringify(validation.data, null, 2);
       await fs.writeFile(path.resolve(targetPath), normalized, "utf-8");
 
       return {
