@@ -6,6 +6,7 @@ import { env } from "../lib/env.js";
 
 // The JSON schema that Copilot must return. Used in the prompt below.
 const DESIGN_SPEC_SCHEMA = `{
+  "_thought": "string, // Record your step-by-step reasoning (Phase 1) here. Calculate contrast ratios and explain your tinted neutrals. BAN pure grey/black/white.",
   "colorTokens": {
     "light": {
       // ── Surfaces ──────────────────────────────────────────────────────────
@@ -312,16 +313,18 @@ All these surfaces and text colors appear together. Ask: do they form a coherent
 **6. State coherence**
 Interactive states (hover, pressed, focused, disabled) must feel like the same element shifting — never a different color entirely. Disabled is always inkDisabled regardless of the surface.
 
-Only after completing Phase 1 in your reasoning, proceed to output the JSON.
+Write all of Phase 1 explicitly into the \`_thought\` field in the root of the JSON schema. Do not write anything outside the JSON.
 
 ## Phase 2 — Output the Design Specification
 
 Generate a comprehensive UI/UX design specification as strict JSON.
 
 Color token rules:
-- All hex values must be specific (e.g. "#FAF8F5", never "warm white" or vague descriptions)
-- Dark mode surfaces: use dark neutrals with subtle warmth or tint matching the brand hue — avoid flat #121212 unless the brand explicitly calls for it
-- inkTertiary is for placeholder / decorative labels only — never for meaningful content
+- **TINTED NEUTRALS ONLY:** Pure grey (#333333, #666666, #CCCCCC) is STRICTLY PROHIBITED. All neutral / surface / ink colors must be tinted with the main brand hue (e.g. #2C2D30 instead of #333333, or #F5F5F4 instead of #F0F0F0).
+- **NO PURE WHITE/BLACK:** Never use exactly #FFFFFF or #000000. Off-white and off-black are required to remove the default digital harshness.
+- All hex values must be specific (e.g. "#FAF8F5").
+- Dark mode surfaces: use dark neutrals with subtle warmth or tint matching the brand hue — avoid flat #121212.
+- inkTertiary is for placeholder / decorative labels only — never for meaningful content.
 - inkOnImage: prefer near-white (#FFFFFF or near) — it must survive both light and dark photo backgrounds
 - Status subtle backgrounds must be low-saturation tints; their Ink tokens must pass WCAG AA on them
 - navBar* and appBar* must be intentional brand colors, not default grey

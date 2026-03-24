@@ -7,9 +7,11 @@ import { env } from "../lib/env.js";
 // Returned to the calling AI so it can generate the brand guide itself.
 // The AI has full generative capability — no need to duplicate it here.
 const BRAND_GUIDE_SCHEMA = `{
-  "appName": string,
-  "tagline": string,
-  "targetUser": string,
+  "_thought": "string", // Reason through the 3 areas (Core Emotions, Visual Metaphors, Anti-Goals) explicitly here before filling other fields.
+
+  "appName": "string",
+  "tagline": "string",
+  "targetUser": "string",
 
   // ── Core Emotional Keywords ───────────────────────────────────────────────
   // What the user must FEEL when using the app (3–5 specific adjectives).
@@ -110,21 +112,21 @@ ${antiGoalSection}
 
 ## Reasoning Instructions
 
-Work through these three areas explicitly in your thinking before producing JSON:
+Work through these three areas explicitly in your thinking inside the \`_thought\` field before producing the rest of the JSON. Do not write text outside the JSON block.
 
 **1. Core Emotional Keywords**
 Identify 3–5 precise emotional adjectives that describe the user's ideal experience.
 Be specific: not "good" but "quietly confident"; not "fast" but "effortlessly frictionless".
 These keywords must be strong enough to act as a filter: if a design decision contradicts any keyword, that decision is wrong.
 
-**2. Visual Metaphors**
-Choose real-world physical objects, materials, or spaces whose sensory qualities directly inspire the UI.
+**2. Visual Metaphors (CRITICAL: AVOID DEFAULT FLAT UI)**
+Choose real-world physical objects, materials, or spaces whose sensory qualities directly inspire the UI. You MUST map the design to a physical texture or material nature to avoid generic flat UI (like Bootstrap/Material). Can be "washi paper", "frosted glass", "analogue synthesizer", "etched metal", etc.
 For each metaphor, articulate the design implication:
-- Surface quality (e.g. matte paper → low-gloss flat surfaces, no harsh drop shadows)
+- Surface quality (e.g. matte paper → low-gloss flat surfaces, no harsh drop shadows; avoid pure #FFFFFF or #000000)
 - Proportions (e.g. slim pocket notebook → compact cards, tight spacing)
 - Weight and movement (e.g. smooth river stone → slow, organic motion curves)
 - Light interaction (e.g. frosted glass → translucent overlays, diffused light)
-The metaphors must be consistent with coreEmotions and coherent with each other — they should feel like they belong to the same physical world.
+The metaphors must be consistent with coreEmotions and coherent with each other.
 
 For searchKeywordsEn, generate 6–10 English phrases specifically for finding UI/UX design references on sites like Dribbble, Mobbin, Behance, and Figma Community. Every keyword must describe a screen, interface, or design pattern — never a real-world scene, person, landscape, or object photograph. Structure them as:
 - "[adjective] [app-type] [platform/medium]" — e.g. "minimal finance app iOS"
@@ -133,19 +135,17 @@ For searchKeywordsEn, generate 6–10 English phrases specifically for finding U
 Bad keywords (will return wrong content): "washi paper texture", "mountain lake", "cozy coffee shop", "woman using phone".
 Good keywords (will return design references): "soft pastel wellness app", "clean budgeting dashboard dark mode", "organic card UI mobile".
 
-**3. Anti-Goals**
+**3. Anti-Goals (FIGHT AI STEREOTYPES)**
 Define what the app must NEVER feel like — the brand's negative space.
-Anti-goals are not about specific widgets; they are about atmosphere and emotional register.
+Force yourself away from standard default designs. Explicitly ban default patterns if they conflict with the brand.
 Examples of well-written anti-goals:
-- "Cold, data-centric dashboard that prioritises density over breath"
+- "Cold, data-centric dashboard that prioritizes density over breath"
+- "Generic SaaS aesthetic with default system blue and pure gray text"
 - "Gamified reward loop that manufactures urgency"
-- "Glossy consumer app with hyper-saturated hero images"
-Anti-goals must be specific enough to rule out real design directions.
+Anti-goals must be specific enough to rule out real, generic design directions.
 Then derive antiPatterns as specific UI/UX implementations that would produce those anti-goal atmospheres.
 
-Only after reasoning through all three, output the JSON.
-
-Return ONLY valid JSON matching this schema — no markdown fences, no extra text:
+Return ONLY valid JSON matching this schema. All your reasoning MUST go into the \`_thought\` field.
 ${BRAND_GUIDE_SCHEMA}`;
 
       return {
@@ -176,7 +176,8 @@ ${BRAND_GUIDE_SCHEMA}`;
       // Validate JSON before saving
       let parsed: unknown;
       try {
-        parsed = JSON.parse(brandGuideJson);
+        const cleanJson = brandGuideJson.replace(/^```json\s*|\s*```$/g, "").trim();
+        parsed = JSON.parse(cleanJson);
       } catch {
         return {
           content: [
